@@ -32,7 +32,9 @@
         .section.active { display: block; animation: fadeIn 0.4s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; margin-top: 20px; }
+        /* ALTERADO PARA 6 CARDS EM LINHA (Ajustado minmax para 180px) */
+        .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; margin-top: 20px; }
+        
         .moto-card { background: var(--card); border-radius: 15px; overflow: hidden; border: 1px solid #222; transition: var(--transition); display: flex; flex-direction: column; position: relative; }
         .moto-card:hover { transform: translateY(-5px); border-color: #444; }
 
@@ -92,6 +94,8 @@
             .sidebar-orcamento { width: 100%; }
             .prev-foto { left: 10px; }
             .next-foto { right: 10px; }
+            /* No mobile volta para automático */
+            .cards-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
         }
     </style>
 </head>
@@ -329,7 +333,7 @@
             let html = "", fatTotal = 0;
             vendasDataGlobal = [];
             const faturamentoDiario = {};
-            const detalhesDia = {}; // Para tooltips personalizados
+            const detalhesDia = {};
 
             linhas.forEach((l, index) => {
                 const c = parseCSVLine(l);
@@ -346,7 +350,6 @@
                         const diaMes = `${partes[0]}/${partes[1]}`; 
                         faturamentoDiario[diaMes] = (faturamentoDiario[diaMes] || 0) + valor;
                         
-                        // Armazenar qual moto foi vendida no dia para o tooltip
                         if(!detalhesDia[diaMes]) detalhesDia[diaMes] = [];
                         detalhesDia[diaMes].push(`${c[2]} (${formatter.format(valor)})`);
                     }
@@ -381,8 +384,6 @@
 
         function atualizarGrafico(dadosDiarios, detalhesDia) {
             const ctx = document.getElementById('graficoFluxo').getContext('2d');
-            
-            // Gradiente para as barras
             const gradient = ctx.createLinearGradient(0, 0, 0, 300);
             gradient.addColorStop(0, '#ef4444'); 
             gradient.addColorStop(1, '#3d0a0a');
@@ -394,13 +395,11 @@
             });
             const valores = diasOrdenados.map(d => dadosDiarios[d]);
 
-            // Cálculo da Linha de Tendência (Média Móvel Simples de 3 dias)
             const linhaTendencia = valores.map((val, i, arr) => {
                 const slice = arr.slice(Math.max(0, i - 2), i + 1);
                 return slice.reduce((a, b) => a + b, 0) / slice.length;
             });
 
-            // Valor da Meta (Exemplo: 50.000 por dia)
             const valorMeta = 50000;
             const metaData = new Array(diasOrdenados.length).fill(valorMeta);
 
@@ -536,16 +535,16 @@
 
         function enviarWhatsApp() {
             if (carrinho.length === 0) return alert("Carrinho vazio!");
-            const nome = document.getElementById('nomeCliente').value || "Não informado";
-            const cidade = document.getElementById('cidadeCliente').value || "Não informado";
-            let msg = `*NOVO ORÇAMENTO*%0A*Cliente:* ${nome}%0A*Cidade:* ${cidade}%0A----------------------------%0A`;
-            carrinho.forEach(i => msg += `• *${i.nome}* - ${formatter.format(i.preco)}%0A`);
-            msg += `----------------------------%0A*Total: ${document.getElementById('total-orc').innerText}*`;
-            window.open(`https://wa.me/?text=${msg}`, '_blank');
+            const nome = document.getElementById('nomeCliente').value || "Cliente";
+            const cidade = document.getElementById('cidadeCliente').value || "Não informada";
+            let msg = `Olá, aqui estão os detalhes do pedido para *${nome}* (${cidade}):\n\n`;
+            carrinho.forEach(item => msg += `- ${item.nome}: ${formatter.format(item.preco)}\n`);
+            msg += `\n*TOTAL: ${document.getElementById('total-orc').innerText}*`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
         fetchData();
-        lucide.createIcons();
+        setInterval(fetchData, 60000);
     </script>
 </body>
 </html>
