@@ -32,17 +32,7 @@
         .section.active { display: block; animation: fadeIn 0.4s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* ALTERAÇÃO SOLICITADA: Vitrine com 6 colunas e responsividade */
-        .cards-grid { 
-            display: grid; 
-            grid-template-columns: repeat(6, 1fr); 
-            gap: 15px; 
-            margin-top: 20px; 
-        }
-        @media (max-width: 1600px) { .cards-grid { grid-template-columns: repeat(5, 1fr); } }
-        @media (max-width: 1300px) { .cards-grid { grid-template-columns: repeat(4, 1fr); } }
-        @media (max-width: 1000px) { .cards-grid { grid-template-columns: repeat(3, 1fr); } }
-
+        .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; margin-top: 20px; }
         .moto-card { background: var(--card); border-radius: 15px; overflow: hidden; border: 1px solid #222; transition: var(--transition); display: flex; flex-direction: column; position: relative; }
         .moto-card:hover { transform: translateY(-5px); border-color: #444; }
 
@@ -102,11 +92,6 @@
             .sidebar-orcamento { width: 100%; }
             .prev-foto { left: 10px; }
             .next-foto { right: 10px; }
-            /* Ajuste extra para a grade em telas mobile */
-            .cards-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        }
-        @media (max-width: 480px) {
-            .cards-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -344,7 +329,7 @@
             let html = "", fatTotal = 0;
             vendasDataGlobal = [];
             const faturamentoDiario = {};
-            const detalhesDia = {}; 
+            const detalhesDia = {}; // Para tooltips personalizados
 
             linhas.forEach((l, index) => {
                 const c = parseCSVLine(l);
@@ -361,6 +346,7 @@
                         const diaMes = `${partes[0]}/${partes[1]}`; 
                         faturamentoDiario[diaMes] = (faturamentoDiario[diaMes] || 0) + valor;
                         
+                        // Armazenar qual moto foi vendida no dia para o tooltip
                         if(!detalhesDia[diaMes]) detalhesDia[diaMes] = [];
                         detalhesDia[diaMes].push(`${c[2]} (${formatter.format(valor)})`);
                     }
@@ -396,6 +382,7 @@
         function atualizarGrafico(dadosDiarios, detalhesDia) {
             const ctx = document.getElementById('graficoFluxo').getContext('2d');
             
+            // Gradiente para as barras
             const gradient = ctx.createLinearGradient(0, 0, 0, 300);
             gradient.addColorStop(0, '#ef4444'); 
             gradient.addColorStop(1, '#3d0a0a');
@@ -407,11 +394,13 @@
             });
             const valores = diasOrdenados.map(d => dadosDiarios[d]);
 
+            // Cálculo da Linha de Tendência (Média Móvel Simples de 3 dias)
             const linhaTendencia = valores.map((val, i, arr) => {
                 const slice = arr.slice(Math.max(0, i - 2), i + 1);
                 return slice.reduce((a, b) => a + b, 0) / slice.length;
             });
 
+            // Valor da Meta (Exemplo: 50.000 por dia)
             const valorMeta = 50000;
             const metaData = new Array(diasOrdenados.length).fill(valorMeta);
 
@@ -549,14 +538,14 @@
             if (carrinho.length === 0) return alert("Carrinho vazio!");
             const nome = document.getElementById('nomeCliente').value || "Não informado";
             const cidade = document.getElementById('cidadeCliente').value || "Não informado";
-            let msg = `Olá! Tenho interesse no seguinte pedido:\n\n*Cliente:* ${nome}\n*Local:* ${cidade}\n\n*Itens:*\n`;
-            carrinho.forEach(i => msg += `- ${i.nome}: ${formatter.format(i.preco)}\n`);
-            msg += `\n*Total: ${formatter.format(carrinho.reduce((a,b) => a+b.preco, 0))}*`;
-            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+            let msg = `*NOVO ORÇAMENTO*%0A*Cliente:* ${nome}%0A*Cidade:* ${cidade}%0A----------------------------%0A`;
+            carrinho.forEach(i => msg += `• *${i.nome}* - ${formatter.format(i.preco)}%0A`);
+            msg += `----------------------------%0A*Total: ${document.getElementById('total-orc').innerText}*`;
+            window.open(`https://wa.me/?text=${msg}`, '_blank');
         }
 
         fetchData();
-        setInterval(fetchData, 60000);
+        lucide.createIcons();
     </script>
 </body>
 </html>
